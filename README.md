@@ -9,7 +9,7 @@ HTTP handlers validate input and call module services. Services own application 
 ```mermaid
 flowchart TB
   UI[Demo dashboard / API clients] --> API[Next App Router]
-  UI -. Socket.IO .-> RT[Socket.IO server]
+  UI -.-> RT[Socket.IO server]
   API --> Auth[Authentication + policy]
   API --> Disaster[Disaster service]
   API --> Nearby[Resource service]
@@ -22,8 +22,8 @@ flowchart TB
   Provider --> Mock[Mock community provider]
   Reports --> Cache[Cache interface]
   Cache --> Redis[(Redis)]
-  Disaster -. publish after commit .-> PubSub[Redis Pub/Sub]
-  PubSub -. subscribe .-> RT
+  Disaster -.-> PubSub[Redis Pub/Sub]
+  PubSub -.-> RT
 ```
 
 ## Stack and features
@@ -51,6 +51,14 @@ npm run dev
 
 Open `http://localhost:3000`. `.env.example` and Compose credentials are for local development only. Change all credentials/secrets before any shared deployment. The app needs PostgreSQL; Redis is optional for request availability.
 
+## Quick Demo
+
+1. Start the application with `npm run dev`.
+2. Open `http://localhost:3000`.
+3. Log in with the seeded Admin or Contributor account.
+4. Create a disaster such as `Heavy flooding has affected Manhattan, NYC.`
+5. Open the disaster detail page to view the resolved location, nearby resources, community reports, and realtime updates.
+
 ### Environment variables
 
 | Variable                     | Purpose                             | Local example                                                                |
@@ -73,19 +81,19 @@ Run `docker compose down -v` only when you intentionally want to remove local da
 
 ## API overview
 
-See [`API.md`](API.md) for request/response examples and errors. The disaster endpoints also remain available under `/api/disasters`.
+See [`API.md`](API.md) for request/response examples and errors. The disaster endpoints are available under `/api/disasters`.
 
-| Method   | Path                                         | Auth                       |
-| -------- | -------------------------------------------- | -------------------------- |
-| `POST`   | `/api/auth/login`                            | Public                     |
-| `GET`    | `/api/health`                                | Public                     |
-| `POST`   | `/disasters`                                 | Admin or Contributor       |
-| `GET`    | `/disasters`                                 | Public                     |
-| `GET`    | `/disasters/:id`                             | Public                     |
-| `PATCH`  | `/disasters/:id`                             | Admin or owner Contributor |
-| `DELETE` | `/disasters/:id`                             | Admin                      |
-| `GET`    | `/disasters/:id/resources?lat=&lng=&radius=` | Public                     |
-| `GET`    | `/disasters/:id/reports`                     | Public                     |
+| Method   | Path                                             | Auth                       |
+| -------- | ------------------------------------------------ | -------------------------- |
+| `POST`   | `/api/auth/login`                                | Public                     |
+| `GET`    | `/api/health`                                    | Public                     |
+| `POST`   | `/api/disasters`                                 | Admin or Contributor       |
+| `GET`    | `/api/disasters`                                 | Public                     |
+| `GET`    | `/api/disasters/:id`                             | Public                     |
+| `PATCH`  | `/api/disasters/:id`                             | Admin or owner Contributor |
+| `DELETE` | `/api/disasters/:id`                             | Admin                      |
+| `GET`    | `/api/disasters/:id/resources?lat=&lng=&radius=` | Public                     |
+| `GET`    | `/api/disasters/:id/reports`                     | Public                     |
 
 Bearer token identity determines `created_by`; no API accepts a caller-supplied user identity. Disaster responses use `created_by`, `created_at`, and `updated_at`. Public reads keep response access simple. Contributors can update only records they created and cannot delete.
 
