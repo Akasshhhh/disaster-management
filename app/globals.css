@@ -1,0 +1,84 @@
+:root {
+  color-scheme: light;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #17212b;
+  background: #f2f5f7;
+}
+
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+}
+.shell {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 32px 20px 64px;
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.panel {
+  background: white;
+  border: 1px solid #dbe2e8;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 18px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+.field {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0;
+}
+.field input,
+.field textarea,
+.field select {
+  border: 1px solid #bbc7d1;
+  border-radius: 6px;
+  padding: 9px 10px;
+}
+.field textarea {
+  min-height: 86px;
+}
+.button {
+  border: 0;
+  border-radius: 6px;
+  background: #165d91;
+  color: white;
+  padding: 10px 14px;
+}
+.button.secondary {
+  color: #165d91;
+  background: #eaf3f9;
+}
+.muted {
+  color: #61717e;
+}
+.error {
+  color: #a42b24;
+}
+.event {
+  border-left: 3px solid #4a9d67;
+  padding: 8px 12px;
+  background: #f2faf4;
+  margin: 8px 0;
+}
