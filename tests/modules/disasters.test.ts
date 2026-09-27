@@ -15,9 +15,9 @@ const sampleDisaster: DisasterRecord = {
   },
   tags: ["flood"],
   status: "active",
-  createdBy: "30000000-0000-4000-8000-000000000001",
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
+  created_by: "30000000-0000-4000-8000-000000000001",
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
 };
 
 describe("DisasterService", () => {
@@ -43,7 +43,7 @@ describe("DisasterService", () => {
           tags: [],
         },
         {
-          id: sampleDisaster.createdBy,
+          id: sampleDisaster.created_by,
           email: "volunteer@example.com",
           role: "CONTRIBUTOR",
         },
@@ -103,7 +103,7 @@ describe("DisasterService", () => {
         tags: ["flood"],
       },
       {
-        id: sampleDisaster.createdBy,
+        id: sampleDisaster.created_by,
         email: "volunteer@example.com",
         role: "CONTRIBUTOR",
       },

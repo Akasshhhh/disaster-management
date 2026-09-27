@@ -59,7 +59,7 @@ export class DisasterService {
     actor: AuthUser,
   ): Promise<DisasterRecord> {
     const current = await this.get(id);
-    requireUpdatePermission(actor, current.createdBy);
+    requireUpdatePermission(actor, current.created_by);
     let location;
     if (input.description) {
       location = await this.resolver.resolve(input.description);

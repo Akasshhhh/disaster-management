@@ -10,7 +10,9 @@ type Disaster = {
   location: { name: string; latitude: number; longitude: number };
   tags: string[];
   status: string;
-  createdBy: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
 };
 
 type Resource = { id: string; name: string; type: string; distanceKm: number };
@@ -49,7 +51,7 @@ export default function DashboardPage() {
 
   const loadDisasters = useCallback(async () => {
     try {
-      const response = await fetch("/api/disasters", {
+      const response = await fetch("/disasters", {
         headers: token ? { authorization: `Bearer ${token}` } : {},
       });
       if (!response.ok) throw new Error("Could not load disasters");
@@ -66,7 +68,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     let active = true;
-    void fetch("/api/disasters", {
+    void fetch("/disasters", {
       headers: token ? { authorization: `Bearer ${token}` } : {},
     })
       .then(async (response) => {
@@ -123,7 +125,7 @@ export default function DashboardPage() {
   async function createDisaster(event: React.FormEvent) {
     event.preventDefault();
     try {
-      const created = await api<Disaster>("/api/disasters", {
+      const created = await api<Disaster>("/disasters", {
         method: "POST",
         body: JSON.stringify({ title, description, tags: ["demo"] }),
       });
@@ -141,9 +143,9 @@ export default function DashboardPage() {
     try {
       const [resourceResult, reportResult] = await Promise.all([
         api<{ resources: Resource[] }>(
-          `/api/disasters/${selected.id}/resources?lat=${selected.location.latitude}&lng=${selected.location.longitude}&radius=25`,
+          `/disasters/${selected.id}/resources?lat=${selected.location.latitude}&lng=${selected.location.longitude}&radius=25`,
         ),
-        api<{ reports: Report[] }>(`/api/disasters/${selected.id}/reports`),
+        api<{ reports: Report[] }>(`/disasters/${selected.id}/reports`),
       ]);
       setResources(resourceResult.resources);
       setReports(reportResult.reports);

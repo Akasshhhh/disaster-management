@@ -30,9 +30,9 @@ describe("Redis disaster event publisher", () => {
       },
       tags: ["flood"],
       status: "active",
-      createdBy: "30000000-0000-4000-8000-000000000001",
-      createdAt: "2026-01-01T00:00:00.000Z",
-      updatedAt: "2026-01-01T00:00:00.000Z",
+      created_by: "30000000-0000-4000-8000-000000000001",
+      created_at: "2026-01-01T00:00:00.000Z",
+      updated_at: "2026-01-01T00:00:00.000Z",
     };
 
     await publisher.publish("disaster_created", disaster);

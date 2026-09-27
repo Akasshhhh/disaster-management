@@ -9,9 +9,9 @@ export type DisasterRecord = {
   location: ResolvedLocation;
   tags: string[];
   status: DisasterStatus;
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
 };
 
 export type CreateDisasterInput = {

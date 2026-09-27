@@ -51,10 +51,17 @@ export const disasterListSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 
+const queryNumber = z
+  .string()
+  .trim()
+  .min(1)
+  .transform(Number)
+  .pipe(z.number().finite());
+
 export const nearbyQuerySchema = z.object({
-  lat: z.coerce.number().finite().min(-90).max(90),
-  lng: z.coerce.number().finite().min(-180).max(180),
-  radius: z.coerce.number().finite().gt(0).max(100),
+  lat: queryNumber.pipe(z.number().min(-90).max(90)),
+  lng: queryNumber.pipe(z.number().min(-180).max(180)),
+  radius: queryNumber.pipe(z.number().gt(0).max(100)),
   type: resourceTypeSchema.optional(),
 });
 

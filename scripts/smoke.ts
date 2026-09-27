@@ -13,7 +13,9 @@ type Disaster = {
   id: string;
   title: string;
   status: string;
-  createdBy: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
   location: { name: string; latitude: number; longitude: number };
 };
 
@@ -89,7 +91,7 @@ try {
     total: number;
     page: number;
     limit: number;
-  }>("/api/disasters?tag=flood");
+  }>("/disasters?tag=flood");
   assert.equal(collection.response.status, 200);
   assert.ok(collection.body.total > 0);
 
@@ -98,7 +100,7 @@ try {
     total: number;
     page: number;
     limit: number;
-  }>("/api/disasters?status=active&page=1&limit=1");
+  }>("/disasters?status=active&page=1&limit=1");
   assert.equal(page.response.status, 200);
   assert.equal(page.body.page, 1);
   assert.equal(page.body.limit, 1);
@@ -107,7 +109,7 @@ try {
 
   const missingId = "ffffffff-ffff-4fff-8fff-ffffffffffff";
   const missing = await request<{ error: { code: string } }>(
-    `/api/disasters/${missingId}`,
+    `/disasters/${missingId}`,
   );
   assert.equal(missing.response.status, 404);
   assert.equal(missing.body.error.code, "DISASTER_NOT_FOUND");
@@ -124,7 +126,7 @@ try {
   });
 
   const createdEvent = waitForEvent<Disaster>(socket, "disaster_created");
-  const create = await request<Disaster>("/api/disasters", contributor.token, {
+  const create = await request<Disaster>("/disasters", contributor.token, {
     method: "POST",
     body: JSON.stringify({
       title: "Live smoke test response",
@@ -134,16 +136,18 @@ try {
   });
   assert.equal(create.response.status, 201);
   createdId = create.body.id;
-  assert.equal(create.body.createdBy, contributor.user.id);
+  assert.equal(create.body.created_by, contributor.user.id);
+  assert.ok(create.body.created_at);
+  assert.ok(create.body.updated_at);
   assert.equal(create.body.location.name, "Manhattan, New York City");
   assert.equal((await createdEvent).id, createdId);
 
-  const detail = await request<Disaster>(`/api/disasters/${createdId}`);
+  const detail = await request<Disaster>(`/disasters/${createdId}`);
   assert.equal(detail.response.status, 200);
   assert.equal(detail.body.id, createdId);
 
   const deniedUpdate = await request<{ error: { code: string } }>(
-    `/api/disasters/${sampleDisasterId}`,
+    `/disasters/${sampleDisasterId}`,
     contributor.token,
     {
       method: "PATCH",
@@ -153,7 +157,7 @@ try {
   assert.equal(deniedUpdate.response.status, 403);
 
   const unresolved = await request<{ error: { code: string } }>(
-    "/api/disasters",
+    "/disasters",
     contributor.token,
     {
       method: "POST",
@@ -169,7 +173,7 @@ try {
 
   const updatedEvent = waitForEvent<Disaster>(socket, "disaster_updated");
   const contributorUpdate = await request<Disaster>(
-    `/api/disasters/${createdId}`,
+    `/disasters/${createdId}`,
     contributor.token,
     {
       method: "PATCH",
@@ -180,13 +184,13 @@ try {
   assert.equal((await updatedEvent).id, createdId);
 
   const deniedDelete = await request<{ error: { code: string } }>(
-    `/api/disasters/${createdId}`,
+    `/disasters/${createdId}`,
     contributor.token,
     { method: "DELETE" },
   );
   assert.equal(deniedDelete.response.status, 403);
   const adminUpdate = await request<Disaster>(
-    `/api/disasters/${createdId}`,
+    `/disasters/${createdId}`,
     adminToken,
     {
       method: "PATCH",
@@ -199,7 +203,7 @@ try {
     resources: Array<{ distanceKm: number }>;
     count: number;
   }>(
-    `/api/disasters/${sampleDisasterId}/resources?lat=40.7831&lng=-73.9712&radius=10`,
+    `/disasters/${sampleDisasterId}/resources?lat=40.7831&lng=-73.9712&radius=10`,
   );
   assert.equal(nearby.response.status, 200);
   assert.ok(nearby.body.count > 0);
@@ -212,20 +216,22 @@ try {
   );
 
   for (const query of [
+    "lat=&lng=-73.9712&radius=10",
+    "lat=40.7831&lng=&radius=10",
     "lat=91&lng=-73.9712&radius=10",
     "lat=40.7831&lng=-181&radius=10",
     "lat=40.7831&lng=-73.9712&radius=0",
     "lat=40.7831&lng=-73.9712&radius=101",
   ]) {
     const invalidNearby = await request(
-      `/api/disasters/${sampleDisasterId}/resources?${query}`,
+      `/disasters/${sampleDisasterId}/resources?${query}`,
     );
     assert.equal(invalidNearby.response.status, 400, query);
   }
 
   const firstReports = await request<{
     reports: Array<{ content: string; user: string; created_at: string }>;
-  }>(`/api/disasters/${createdId}/reports`);
+  }>(`/disasters/${createdId}/reports`);
   await redis.connect();
   const cacheKey = `community-reports:v1:${createdId}`;
   assert.ok((await redis.ttl(cacheKey)) > 0);
@@ -239,7 +245,7 @@ try {
   await redis.set(cacheKey, JSON.stringify(cachedReports), { EX: 60 });
   const secondReports = await request<{
     reports: Array<{ content: string; user: string; created_at: string }>;
-  }>(`/api/disasters/${createdId}/reports`);
+  }>(`/disasters/${createdId}/reports`);
   assert.equal(firstReports.response.status, 200);
   assert.equal(secondReports.response.status, 200);
   assert.deepEqual(secondReports.body.reports, cachedReports);
@@ -260,7 +266,7 @@ try {
   if (socket) socket.disconnect();
   if (adminToken && createdId) {
     try {
-      const cleanup = await request(`/api/disasters/${createdId}`, adminToken, {
+      const cleanup = await request(`/disasters/${createdId}`, adminToken, {
         method: "DELETE",
       });
       assert.equal(cleanup.response.status, 204);

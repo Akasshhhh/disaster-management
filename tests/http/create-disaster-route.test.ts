@@ -22,7 +22,7 @@ describe("POST /api/disasters", () => {
   it("uses authenticated identity and ignores user-supplied created_by", async () => {
     const record = {
       id: "10000000-0000-4000-8000-000000000001",
-      createdBy: actor.id,
+      created_by: actor.id,
     };
     create.mockResolvedValue(record);
     const response = await POST(
@@ -38,6 +38,10 @@ describe("POST /api/disasters", () => {
       }),
     );
     expect(response.status).toBe(201);
+    await expect(response.json()).resolves.toMatchObject({
+      id: record.id,
+      created_by: actor.id,
+    });
     expect(create).toHaveBeenCalledWith(
       {
         title: "Flood response",

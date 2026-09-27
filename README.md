@@ -9,7 +9,7 @@ HTTP handlers validate input and call module services. Services own application 
 ```mermaid
 flowchart TB
   UI[Demo dashboard / API clients] --> API[Next App Router]
-  UI -. Socket.IO .-> RT[Realtime publisher]
+  UI -. Socket.IO .-> RT[Socket.IO server]
   API --> Auth[Authentication + policy]
   API --> Disaster[Disaster service]
   API --> Nearby[Resource service]
@@ -22,7 +22,8 @@ flowchart TB
   Provider --> Mock[Mock community provider]
   Reports --> Cache[Cache interface]
   Cache --> Redis[(Redis)]
-  Disaster -. emit after commit .-> RT
+  Disaster -. publish after commit .-> PubSub[Redis Pub/Sub]
+  PubSub -. subscribe .-> RT
 ```
 
 ## Stack and features
@@ -55,7 +56,7 @@ Open `http://localhost:3000`. `.env.example` and Compose credentials are for loc
 | Variable                     | Purpose                             | Local example                                                                |
 | ---------------------------- | ----------------------------------- | ---------------------------------------------------------------------------- |
 | `DATABASE_URL`               | PostgreSQL/PostGIS connection       | `postgres://disaster:disaster_dev_password@localhost:5432/disaster_response` |
-| `REDIS_URL`                  | Optional report cache               | `redis://localhost:6379`                                                     |
+| `REDIS_URL`                  | Optional report cache and realtime  | `redis://localhost:6379`                                                     |
 | `JWT_SECRET`                 | HS256 signing key, minimum 32 chars | example contains local-only value                                            |
 | `PORT`                       | HTTP and Socket.IO port             | `3000`                                                                       |
 | `NODE_ENV`                   | Runtime mode                        | `development`                                                                |
@@ -72,21 +73,21 @@ Run `docker compose down -v` only when you intentionally want to remove local da
 
 ## API overview
 
-See [`docs/API.md`](docs/API.md) for request/response examples and errors.
+See [`API.md`](API.md) for request/response examples and errors. The disaster endpoints also remain available under `/api/disasters`.
 
-| Method   | Path                                             | Auth                       |
-| -------- | ------------------------------------------------ | -------------------------- |
-| `POST`   | `/api/auth/login`                                | Public                     |
-| `GET`    | `/api/health`                                    | Public                     |
-| `POST`   | `/api/disasters`                                 | Admin or Contributor       |
-| `GET`    | `/api/disasters`                                 | Public                     |
-| `GET`    | `/api/disasters/:id`                             | Public                     |
-| `PATCH`  | `/api/disasters/:id`                             | Admin or owner Contributor |
-| `DELETE` | `/api/disasters/:id`                             | Admin                      |
-| `GET`    | `/api/disasters/:id/resources?lat=&lng=&radius=` | Public                     |
-| `GET`    | `/api/disasters/:id/reports`                     | Public                     |
+| Method   | Path                                         | Auth                       |
+| -------- | -------------------------------------------- | -------------------------- |
+| `POST`   | `/api/auth/login`                            | Public                     |
+| `GET`    | `/api/health`                                | Public                     |
+| `POST`   | `/disasters`                                 | Admin or Contributor       |
+| `GET`    | `/disasters`                                 | Public                     |
+| `GET`    | `/disasters/:id`                             | Public                     |
+| `PATCH`  | `/disasters/:id`                             | Admin or owner Contributor |
+| `DELETE` | `/disasters/:id`                             | Admin                      |
+| `GET`    | `/disasters/:id/resources?lat=&lng=&radius=` | Public                     |
+| `GET`    | `/disasters/:id/reports`                     | Public                     |
 
-Bearer token identity determines `created_by`; no API accepts a caller-supplied user identity. Public reads keep response access simple. Contributors can update only records they created and cannot delete.
+Bearer token identity determines `created_by`; no API accepts a caller-supplied user identity. Disaster responses use `created_by`, `created_at`, and `updated_at`. Public reads keep response access simple. Contributors can update only records they created and cannot delete.
 
 ## Data model and geospatial query
 
@@ -116,21 +117,21 @@ npm test
 RUN_DB_INTEGRATION=1 npm test -- tests/integration/postgis.test.ts
 ```
 
-The PostGIS integration test requires Compose services, applied migrations, and seed data. Unit tests mock/inject external boundaries and do not require Docker.
+The PostGIS integration test requires Compose services, applied migrations, and seed data. Vitest loads the local `.env` file; shell-provided values take precedence. Unit tests mock/inject external boundaries and do not require Docker.
 
 ## Technical decisions and trade-offs
 
-See [`docs/Design.md`](docs/Design.md) for the architecture/fault-containment narrative and [`docs/DECISIONS.md`](docs/DECISIONS.md) for structured decision context, options, consequences, and evolution. The main deliberate simplifications are offline resolver/provider mocks, ephemeral reports, best-effort non-durable Redis Pub/Sub realtime, no outbox/background workers, simple offset pagination, and a minimal UI. These choices reduce setup and testing complexity but do not provide global geocoding, live report data, or guaranteed event delivery.
+PostgreSQL was selected for relational ownership and transactions; PostGIS handles indexed radius searches in the same store. The offline resolver and mock reports provider make local runs deterministic and require no API keys. Redis caches reports for 60 seconds and carries best-effort realtime events between Next route handlers and Socket.IO. The database remains authoritative, so a Redis outage does not undo disaster writes. These choices add local PostGIS and Redis setup but keep the application as one deployable.
 
 ## Assumptions, limitations, and scale evolution
 
 - The demo resolver supports a finite gazetteer and is not intended for general geocoding.
 - Seed credentials and Compose credentials are development-only.
-- Realtime uses Redis Pub/Sub to bridge Next route handlers and the custom Socket.IO server; notifications are ephemeral and can be lost during Redis/subscriber outages. Durable notifications need a transactional outbox/broker.
+- Realtime uses Redis Pub/Sub to bridge Next route handlers and the custom Socket.IO server; notifications are ephemeral and can be lost during Redis/subscriber outages. Durable notifications would need a transactional outbox/broker.
 - Reports are ephemeral and may be fetched again after cache expiry. Real providers may require quotas, rate limiting, circuit breakers, retries/backoff, and stale-while-revalidate.
 - Larger data volume may justify keyset pagination, query-plan-driven indexes, background work, audit logs, structured observability, and durable event processing.
-- Database remains the only mandatory runtime data dependency. No claim of production readiness is made.
+- Database remains the only mandatory runtime data dependency. Offset pagination and development-only accounts keep this take-home simple; a larger deployment would need stronger identity and operational controls.
 
 ## AI-assisted development
 
-AI assistance was used to accelerate repository scaffolding, implementation, and documentation. The architecture, trade-offs, code, and validation remain subject to engineer review; generated output was iterated against typechecking, tests, and critical-path checks. The full decision trail is kept in `docs/Design.md` and `docs/DECISIONS.md`.
+Codex helped with coding, tests, documentation, and some design recommendations. I proposed the overall design and architecture, including the modular monolith, PostGIS-backed resource search, cache-aside reports, and the main failure boundaries. I also defined a representative Manhattan flooding scenario: a contributor creates an incident from a description, the system resolves its location, finds nearby resources, retrieves community reports, and sends a realtime update. I reviewed and refined the implementation against that flow and verified it with automated tests and a live smoke test.

@@ -8,4 +8,5 @@ coverage/
 *.log
 *.tsbuildinfo
 drizzle/meta/*.json.tmp
-/docs
+/docs/
+.DS_Store

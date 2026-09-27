@@ -42,9 +42,9 @@ function mapDisaster(row: DisasterRow): DisasterRecord {
     },
     tags: row.tags,
     status: row.status,
-    createdBy: row.created_by,
-    createdAt: new Date(row.created_at).toISOString(),
-    updatedAt: new Date(row.updated_at).toISOString(),
+    created_by: row.created_by,
+    created_at: new Date(row.created_at).toISOString(),
+    updated_at: new Date(row.updated_at).toISOString(),
   };
 }
 
