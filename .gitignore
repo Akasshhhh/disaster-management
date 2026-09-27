@@ -10,3 +10,4 @@ coverage/
 drizzle/meta/*.json.tmp
 /docs/
 .DS_Store
+.agents/
