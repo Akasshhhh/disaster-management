@@ -51,14 +51,6 @@ npm run dev
 
 Open `http://localhost:3000`. `.env.example` and Compose credentials are for local development only. Change all credentials/secrets before any shared deployment. The app needs PostgreSQL; Redis is optional for request availability.
 
-## Quick Demo
-
-1. Start the application with `npm run dev`.
-2. Open `http://localhost:3000`.
-3. Log in with the seeded Admin or Contributor account.
-4. Create a disaster such as `Heavy flooding has affected Manhattan, NYC.`
-5. Open the disaster detail page to view the resolved location, nearby resources, community reports, and realtime updates.
-
 ### Environment variables
 
 | Variable                     | Purpose                             | Local example                                                                |
@@ -78,6 +70,14 @@ Open `http://localhost:3000`. `.env.example` and Compose credentials are for loc
 - Contributor: `volunteer@example.com` / `Volunteer123!`
 
 Run `docker compose down -v` only when you intentionally want to remove local database data.
+
+## Quick Demo
+
+1. Start the application with `npm run dev`.
+2. Check `http://localhost:3000/api/health`, then open `http://localhost:3000`.
+3. Log in with a seeded Admin or Contributor account listed above.
+4. Create a disaster such as `Heavy flooding has affected Manhattan, NYC.`
+5. Open the disaster detail page to view the resolved location, nearby resources, community reports, and realtime updates.
 
 ## API overview
 
